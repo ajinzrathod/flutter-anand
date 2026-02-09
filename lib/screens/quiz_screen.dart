@@ -31,18 +31,22 @@ class _QuizScreenState extends State<QuizScreen> {
     selectedAnswers = List.filled(questions.length, null);
   }
 
+  int _getCorrectAnswersCount() {
+    int count = 0;
+    for (int i = 0; i <= currentQuestionIndex; i++) {
+      final question = questions[i];
+      final selectedIndex = selectedAnswers[i];
+      if (selectedIndex != null && selectedIndex == question.correctOptionIndex) {
+        count++;
+      }
+    }
+    return count;
+  }
+
   void _nextQuestion() {
     if (currentQuestionIndex < questions.length - 1) {
       setState(() {
         currentQuestionIndex++;
-      });
-    }
-  }
-
-  void _previousQuestion() {
-    if (currentQuestionIndex > 0) {
-      setState(() {
-        currentQuestionIndex--;
       });
     }
   }
@@ -90,6 +94,241 @@ class _QuizScreenState extends State<QuizScreen> {
     Navigator.of(context).pushReplacementNamed(
       '/results',
       arguments: result,
+    );
+  }
+
+  void _showAnswerFeedback() {
+    final question = questions[currentQuestionIndex];
+    final selectedIndex = selectedAnswers[currentQuestionIndex];
+    
+    if (selectedIndex == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select an answer first!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final isCorrect = selectedIndex == question.correctOptionIndex;
+    final correctAnswerText = question.options[question.correctOptionIndex];
+    final correctAnswerGuj = question.optionsGujarati[question.correctOptionIndex];
+    final correctCount = _getCorrectAnswersCount();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isCorrect
+                  ? [Colors.green[100]!, Colors.green[50]!]
+                  : [Colors.orange[100]!, Colors.orange[50]!],
+            ),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Result icon and message
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isCorrect ? Colors.green : Colors.orange,
+                  ),
+                  child: Icon(
+                    isCorrect ? Icons.check : Icons.close,
+                    color: Colors.white,
+                    size: 48,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  isCorrect ? '🎉 Excellent!' : '💪 Good Try!',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: isCorrect ? Colors.green[700] : Colors.orange[700],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  isCorrect
+                      ? 'Your answer is correct! Keep it up!'
+                      : 'The correct answer was:',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.black87,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                // Correct answer display
+                if (!isCorrect)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.green,
+                        width: 2,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Correct Answer (English)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          correctAnswerText,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.green,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'સાચો જવાબ (Gujarati)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          correctAnswerGuj,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: 16),
+                // Progress tracker
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'Your Progress',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: '$correctCount',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green[600],
+                              ),
+                            ),
+                            const TextSpan(
+                              text: ' / ',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.black54,
+                              ),
+                            ),
+                            const TextSpan(
+                              text: '10',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black54,
+                              ),
+                            ),
+                            const TextSpan(
+                              text: ' correct',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      LinearProgressIndicator(
+                        value: correctCount / 10,
+                        minHeight: 6,
+                        backgroundColor: Colors.grey[300],
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      if (currentQuestionIndex < questions.length - 1) {
+                        _nextQuestion();
+                      } else {
+                        _submitQuiz();
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isCorrect ? Colors.green : Colors.orange,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Text(
+                      currentQuestionIndex == questions.length - 1
+                          ? 'View Results'
+                          : 'Next Question',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -307,23 +546,11 @@ class _QuizScreenState extends State<QuizScreen> {
               Container(
                 padding: const EdgeInsets.all(20),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    ElevatedButton.icon(
-                      onPressed:
-                          currentQuestionIndex > 0 ? _previousQuestion : null,
-                      icon: const Icon(Icons.arrow_back),
-                      label: const Text('Previous'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
-                      ),
-                    ),
                     isLastQuestion
                         ? ElevatedButton(
-                            onPressed: _submitQuiz,
+                            onPressed: _showAnswerFeedback,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green,
                               padding: const EdgeInsets.symmetric(
@@ -332,17 +559,21 @@ class _QuizScreenState extends State<QuizScreen> {
                               ),
                             ),
                             child: const Text(
-                              'Submit',
-                              style: TextStyle(color: Colors.white),
+                              'Submit Quiz',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           )
                         : ElevatedButton.icon(
-                            onPressed: _nextQuestion,
-                            label: const Text('Next'),
+                            onPressed: _showAnswerFeedback,
+                            label: const Text('Next Question'),
                             icon: const Icon(Icons.arrow_forward),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
+                                horizontal: 24,
                                 vertical: 12,
                               ),
                             ),
