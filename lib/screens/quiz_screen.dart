@@ -19,7 +19,7 @@ class QuizScreen extends StatefulWidget {
 
 class _QuizScreenState extends State<QuizScreen> {
   late List<Question> questions;
-  late List<String> selectedAnswers;
+  late List<int?> selectedAnswers;
   int currentQuestionIndex = 0;
 
   @override
@@ -28,7 +28,7 @@ class _QuizScreenState extends State<QuizScreen> {
     // Get questions by difficulty and randomize 10 of them
     final filtered = widget.set.getQuestionsByDifficulty(widget.difficulty);
     questions = (filtered..shuffle()).take(10).toList();
-    selectedAnswers = List.filled(questions.length, '');
+    selectedAnswers = List.filled(questions.length, null);
   }
 
   void _nextQuestion() {
@@ -53,25 +53,24 @@ class _QuizScreenState extends State<QuizScreen> {
     final answers = <QuestionAnswer>[];
 
     for (int i = 0; i < questions.length; i++) {
-      final isCorrect = selectedAnswers[i]
-          .toLowerCase()
-          .trim()
-          .compareTo(questions[i].answerEnglish.toLowerCase().trim()) ==
-          0 ||
-          selectedAnswers[i]
-              .toLowerCase()
-              .trim()
-              .compareTo(questions[i].answerGujarati.toLowerCase().trim()) ==
-              0;
+      final question = questions[i];
+      final selectedIndex = selectedAnswers[i];
+      
+      final isCorrect = selectedIndex != null && 
+          selectedIndex == question.correctOptionIndex;
 
       if (isCorrect) {
         correctCount++;
       }
 
+      final selectedAnswer = selectedIndex != null 
+          ? question.options[selectedIndex]
+          : 'Not answered';
+
       answers.add(
         QuestionAnswer(
-          question: questions[i],
-          userAnswer: selectedAnswers[i],
+          question: question,
+          userAnswer: selectedAnswer,
           isCorrect: isCorrect,
         ),
       );
@@ -99,8 +98,8 @@ class _QuizScreenState extends State<QuizScreen> {
     final question = questions[currentQuestionIndex];
     final isLastQuestion = currentQuestionIndex == questions.length - 1;
 
-    return WillPopScope(
-      onWillPop: () async => false, // Prevent going back
+    return PopScope(
+      canPop: false,
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.blueAccent,
@@ -197,9 +196,9 @@ class _QuizScreenState extends State<QuizScreen> {
                           ),
                         ),
                         const SizedBox(height: 24),
-                        // Answer input
+                        // MCQ Options
                         const Text(
-                          'Your Answer',
+                          'Select Your Answer',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -207,77 +206,97 @@ class _QuizScreenState extends State<QuizScreen> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        TextField(
-                          onChanged: (value) {
-                            selectedAnswers[currentQuestionIndex] = value;
+                        ...List.generate(
+                          question.options.length,
+                          (optionIndex) {
+                            final isSelected =
+                                selectedAnswers[currentQuestionIndex] ==
+                                    optionIndex;
+                            final option = question.options[optionIndex];
+                            final optionGuj = question.optionsGujarati[optionIndex];
+
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  selectedAnswers[currentQuestionIndex] =
+                                      optionIndex;
+                                });
+                              },
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? Colors.blueAccent
+                                      : Colors.white,
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? Colors.blueAccent
+                                        : Colors.grey[300]!,
+                                    width: 2,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 24,
+                                      height: 24,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: isSelected
+                                              ? Colors.white
+                                              : Colors.grey[400]!,
+                                          width: 2,
+                                        ),
+                                        color: isSelected
+                                            ? Colors.blueAccent
+                                            : Colors.transparent,
+                                      ),
+                                      child: isSelected
+                                          ? const Icon(
+                                              Icons.check,
+                                              color: Colors.white,
+                                              size: 14,
+                                            )
+                                          : null,
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            option,
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w500,
+                                              color: isSelected
+                                                  ? Colors.white
+                                                  : Colors.black87,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            optionGuj,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w400,
+                                              color: isSelected
+                                                  ? Colors.white70
+                                                  : Colors.black54,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
                           },
-                          controller: TextEditingController(
-                            text: selectedAnswers[currentQuestionIndex],
-                          ),
-                          decoration: InputDecoration(
-                            hintText: 'Type your answer...',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(
-                                color: Colors.blueAccent,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(
-                                color: Colors.blueAccent,
-                                width: 2,
-                              ),
-                            ),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: const EdgeInsets.all(16),
-                          ),
-                          minLines: 3,
-                          maxLines: 3,
-                        ),
-                        const SizedBox(height: 24),
-                        // Hint box
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.blue[50],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: Colors.blue[200]!,
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Hint (Answers)',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blue,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'English: ${question.answerEnglish}',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.black54,
-                                  fontStyle: FontStyle.italic,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Gujarati: ${question.answerGujarati}',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.black54,
-                                  fontStyle: FontStyle.italic,
-                                ),
-                              ),
-                            ],
-                          ),
                         ),
                       ],
                     ),
@@ -291,7 +310,8 @@ class _QuizScreenState extends State<QuizScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     ElevatedButton.icon(
-                      onPressed: currentQuestionIndex > 0 ? _previousQuestion : null,
+                      onPressed:
+                          currentQuestionIndex > 0 ? _previousQuestion : null,
                       icon: const Icon(Icons.arrow_back),
                       label: const Text('Previous'),
                       style: ElevatedButton.styleFrom(

@@ -7,6 +7,9 @@ class Question {
   final String answerEnglish;
   final String answerGujarati;
   final DifficultyLevel difficulty;
+  final List<String> options; // MCQ options in English
+  final List<String> optionsGujarati; // MCQ options in Gujarati
+  final int correctOptionIndex; // Index of correct answer in options
 
   Question({
     required this.id,
@@ -15,6 +18,9 @@ class Question {
     required this.answerEnglish,
     required this.answerGujarati,
     required this.difficulty,
+    required this.options,
+    required this.optionsGujarati,
+    required this.correctOptionIndex,
   });
 }
 
