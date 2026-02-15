@@ -21,14 +21,15 @@ class _QuizScreenState extends State<QuizScreen> {
   late List<Question> questions;
   late List<int?> selectedAnswers;
   int currentQuestionIndex = 0;
+  late List<bool> feedbackShown;
 
   @override
   void initState() {
     super.initState();
-    // Get questions by difficulty and randomize 10 of them
-    final filtered = widget.set.getQuestionsByDifficulty(widget.difficulty);
-    questions = (filtered..shuffle()).take(10).toList();
+    // Randomize 10 questions from the selected difficulty set
+    questions = (widget.set.questions..shuffle()).take(10).toList();
     selectedAnswers = List.filled(questions.length, null);
+    feedbackShown = List.filled(questions.length, false);
   }
 
   int _getCorrectAnswersCount() {
@@ -110,6 +111,10 @@ class _QuizScreenState extends State<QuizScreen> {
       );
       return;
     }
+
+    setState(() {
+      feedbackShown[currentQuestionIndex] = true;
+    });
 
     final isCorrect = selectedIndex == question.correctOptionIndex;
     final correctAnswerText = question.options[question.correctOptionIndex];
@@ -451,27 +456,83 @@ class _QuizScreenState extends State<QuizScreen> {
                             final isSelected =
                                 selectedAnswers[currentQuestionIndex] ==
                                     optionIndex;
+                            final isCorrectOption =
+                                optionIndex == question.correctOptionIndex;
+                            final isFeedbackShown =
+                                feedbackShown[currentQuestionIndex];
                             final option = question.options[optionIndex];
                             final optionGuj = question.optionsGujarati[optionIndex];
 
+                            Color getBackgroundColor() {
+                              if (!isFeedbackShown) {
+                                return isSelected
+                                    ? Colors.blueAccent
+                                    : Colors.white;
+                              }
+                              if (isCorrectOption) {
+                                return Colors.green[100]!;
+                              }
+                              if (isSelected && !isCorrectOption) {
+                                return Colors.red[100]!;
+                              }
+                              return Colors.white;
+                            }
+
+                            Color getBorderColor() {
+                              if (!isFeedbackShown) {
+                                return isSelected
+                                    ? Colors.blueAccent
+                                    : Colors.grey[300]!;
+                              }
+                              if (isCorrectOption) {
+                                return Colors.green;
+                              }
+                              if (isSelected && !isCorrectOption) {
+                                return Colors.red;
+                              }
+                              return Colors.grey[300]!;
+                            }
+
+                            Color getTextColor() {
+                              if (!isFeedbackShown) {
+                                return isSelected
+                                    ? Colors.white
+                                    : Colors.black87;
+                              }
+                              if (isCorrectOption || isSelected) {
+                                return Colors.black87;
+                              }
+                              return Colors.black54;
+                            }
+
+                            Color getSecondaryTextColor() {
+                              if (!isFeedbackShown) {
+                                return isSelected
+                                    ? Colors.white70
+                                    : Colors.black54;
+                              }
+                              if (isCorrectOption || isSelected) {
+                                return Colors.black54;
+                              }
+                              return Colors.black38;
+                            }
+
                             return GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  selectedAnswers[currentQuestionIndex] =
-                                      optionIndex;
-                                });
-                              },
+                              onTap: isFeedbackShown
+                                  ? null
+                                  : () {
+                                      setState(() {
+                                        selectedAnswers[currentQuestionIndex] =
+                                            optionIndex;
+                                      });
+                                    },
                               child: Container(
                                 margin: const EdgeInsets.only(bottom: 12),
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? Colors.blueAccent
-                                      : Colors.white,
+                                  color: getBackgroundColor(),
                                   border: Border.all(
-                                    color: isSelected
-                                        ? Colors.blueAccent
-                                        : Colors.grey[300]!,
+                                    color: getBorderColor(),
                                     width: 2,
                                   ),
                                   borderRadius: BorderRadius.circular(8),
@@ -484,22 +545,42 @@ class _QuizScreenState extends State<QuizScreen> {
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         border: Border.all(
-                                          color: isSelected
-                                              ? Colors.white
+                                          color: isFeedbackShown &&
+                                                  (isCorrectOption ||
+                                                      isSelected)
+                                              ? getBorderColor()
                                               : Colors.grey[400]!,
                                           width: 2,
                                         ),
-                                        color: isSelected
-                                            ? Colors.blueAccent
+                                        color: isFeedbackShown &&
+                                                (isCorrectOption ||
+                                                    isSelected)
+                                            ? getBorderColor()
                                             : Colors.transparent,
                                       ),
-                                      child: isSelected
+                                      child: (isFeedbackShown &&
+                                              isCorrectOption)
                                           ? const Icon(
                                               Icons.check,
-                                              color: Colors.white,
+                                              color: Colors.green,
                                               size: 14,
                                             )
-                                          : null,
+                                          : (isFeedbackShown &&
+                                                  isSelected &&
+                                                  !isCorrectOption)
+                                              ? const Icon(
+                                                  Icons.close,
+                                                  color: Colors.red,
+                                                  size: 14,
+                                                )
+                                              : (isSelected &&
+                                                      !isFeedbackShown
+                                                  ? const Icon(
+                                                      Icons.check,
+                                                      color: Colors.white,
+                                                      size: 14,
+                                                    )
+                                                  : null),
                                     ),
                                     const SizedBox(width: 16),
                                     Expanded(
@@ -512,9 +593,7 @@ class _QuizScreenState extends State<QuizScreen> {
                                             style: TextStyle(
                                               fontSize: 15,
                                               fontWeight: FontWeight.w500,
-                                              color: isSelected
-                                                  ? Colors.white
-                                                  : Colors.black87,
+                                              color: getTextColor(),
                                             ),
                                           ),
                                           const SizedBox(height: 4),
@@ -523,9 +602,8 @@ class _QuizScreenState extends State<QuizScreen> {
                                             style: TextStyle(
                                               fontSize: 13,
                                               fontWeight: FontWeight.w400,
-                                              color: isSelected
-                                                  ? Colors.white70
-                                                  : Colors.black54,
+                                              color:
+                                                  getSecondaryTextColor(),
                                             ),
                                           ),
                                         ],
