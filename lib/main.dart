@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'models.dart';
+import 'language_provider.dart';
+import 'screens/language_selection_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/set_selection_screen.dart';
 import 'screens/quiz_screen.dart';
@@ -28,6 +30,10 @@ class MyApp extends StatelessWidget {
                 onShastraSelected: _dummyCallback,
               ),
             );
+          case '/language-selection':
+            return MaterialPageRoute(
+              builder: (context) => const LanguageSelectionScreen(),
+            );
           case '/set-selection':
             final shastra = settings.arguments as Shastra;
             return MaterialPageRoute(
@@ -51,12 +57,11 @@ class MyApp extends StatelessWidget {
             );
           default:
             return MaterialPageRoute(
-              builder: (context) => const HomeScreen(
-                onShastraSelected: _dummyCallback,
-              ),
+              builder: (context) => const LanguageSelectionScreen(),
             );
         }
       },
+      initialRoute: '/language-selection',
     );
   }
 

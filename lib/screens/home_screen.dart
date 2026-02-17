@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models.dart';
 import '../dummy_data.dart';
+import '../language_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(Shastra) onShastraSelected;
@@ -41,6 +42,30 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.symmetric(vertical: 50, horizontal: 20),
               child: Column(
                 children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const SizedBox(width: 40),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).pushReplacementNamed('/language-selection');
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.language,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 20),
                   const Text(
                     'Shastra Quiz',
@@ -52,7 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Select a Shastra to begin',
+                    LanguageProvider.isEnglish() ? 'Select a Shastra to begin' : 'શરૂ કરવા માટે એક શાસ્ત્ર પસંદ કરો',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.white.withOpacity(0.9),
@@ -153,7 +178,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                shastra.nameEnglish,
+                                                LanguageProvider.isEnglish() ? shastra.nameEnglish : shastra.nameGujarati,
                                                 style: const TextStyle(
                                                   fontSize: 22,
                                                   fontWeight: FontWeight.bold,
@@ -162,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                               ),
                                               const SizedBox(height: 8),
                                               Text(
-                                                shastra.nameGujarati,
+                                                LanguageProvider.isEnglish() ? shastra.nameGujarati : shastra.nameEnglish,
                                                 style: const TextStyle(
                                                   fontSize: 18,
                                                   color: Colors.black54,
@@ -187,7 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     const SizedBox(height: 12),
                                     Text(
-                                      shastra.descriptionEnglish,
+                                      LanguageProvider.isEnglish() ? shastra.descriptionEnglish : shastra.descriptionGujarati,
                                       style: const TextStyle(
                                         fontSize: 14,
                                         color: Colors.black45,
@@ -195,31 +220,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      shastra.descriptionGujarati,
+                                      LanguageProvider.isEnglish() ? shastra.descriptionGujarati : shastra.descriptionEnglish,
                                       style: const TextStyle(
                                         fontSize: 13,
                                         color: Colors.black45,
                                       ),
                                     ),
                                     const SizedBox(height: 12),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 6,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: colors[index].withOpacity(0.2),
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: Text(
-                                        '${shastra.sets.length} Sets Available',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: colors[index],
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
                                   ],
                                 ),
                               ),

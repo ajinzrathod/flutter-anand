@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models.dart';
+import '../language_provider.dart';
 
 class SetSelectionScreen extends StatelessWidget {
   final Shastra shastra;
@@ -50,6 +51,7 @@ class SetSelectionScreen extends StatelessWidget {
               child: Column(
                 children: [
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       GestureDetector(
                         onTap: () => Navigator.of(context).pop(),
@@ -66,11 +68,29 @@ class SetSelectionScreen extends StatelessWidget {
                           ),
                         ),
                       ),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).pushReplacementNamed('/language-selection');
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.language,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    shastra.nameEnglish,
+                    LanguageProvider.isEnglish() ? shastra.nameEnglish : shastra.nameGujarati,
                     style: const TextStyle(
                       fontSize: 36,
                       fontWeight: FontWeight.bold,
@@ -79,7 +99,7 @@ class SetSelectionScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    shastra.nameGujarati,
+                    LanguageProvider.isEnglish() ? shastra.nameGujarati : shastra.nameEnglish,
                     style: const TextStyle(
                       fontSize: 24,
                       color: Colors.white,
@@ -87,7 +107,7 @@ class SetSelectionScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Select Difficulty Level',
+                    LanguageProvider.isEnglish() ? 'Select Difficulty Level' : 'મુશ્કેલીનું સ્તર પસંદ કરો',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.white.withOpacity(0.9),
@@ -108,7 +128,6 @@ class SetSelectionScreen extends StatelessWidget {
                       : DifficultyLevel.easy;
                   final color = _getDifficultyColor(difficulty);
                   final difficultyLabel = _getDifficultyLabel(difficulty);
-                  final questionCount = set.questions.length;
 
                   return GestureDetector(
                     onTap: () {
@@ -195,7 +214,7 @@ class SetSelectionScreen extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
-                                  set.descriptionEnglish,
+                                  LanguageProvider.isEnglish() ? set.descriptionEnglish : set.descriptionGujarati,
                                   style: const TextStyle(
                                     fontSize: 14,
                                     color: Colors.black87,
@@ -205,7 +224,7 @@ class SetSelectionScreen extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 12),
                                 Text(
-                                  set.descriptionGujarati,
+                                  LanguageProvider.isEnglish() ? set.descriptionGujarati : set.descriptionEnglish,
                                   style: const TextStyle(
                                     fontSize: 13,
                                     color: Colors.black54,
@@ -214,24 +233,6 @@ class SetSelectionScreen extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 16),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: color.withOpacity(0.15),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Text(
-                                    '$questionCount Questions Available',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: color,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
                               ],
                             ),
                           ),

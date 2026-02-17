@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models.dart';
+import '../language_provider.dart';
 
 class QuizScreen extends StatefulWidget {
   final QuestionSet set;
@@ -195,27 +196,9 @@ class _QuizScreenState extends State<QuizScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Correct Answer (English)',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
                         Text(
-                          correctAnswerText,
+                          LanguageProvider.isEnglish() ? 'Correct Answer (English)' : 'સાચો જવાબ (Gujarati)',
                           style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.green,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'સાચો જવાબ (Gujarati)',
-                          style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                             color: Colors.grey,
@@ -223,7 +206,7 @@ class _QuizScreenState extends State<QuizScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          correctAnswerGuj,
+                          LanguageProvider.isEnglish() ? correctAnswerText : correctAnswerGuj,
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -397,30 +380,9 @@ class _QuizScreenState extends State<QuizScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'Question (English)',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
                               Text(
-                                question.textEnglish,
+                                LanguageProvider.isEnglish() ? 'Question (English)' : 'પ્રશ્ન (Gujarati)',
                                 style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
-                                  height: 1.5,
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              const Divider(),
-                              const SizedBox(height: 20),
-                              const Text(
-                                'પ્રશ્ન (Gujarati)',
-                                style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.grey,
@@ -428,7 +390,7 @@ class _QuizScreenState extends State<QuizScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                question.textGujarati,
+                                LanguageProvider.isEnglish() ? question.textEnglish : question.textGujarati,
                                 style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w600,
@@ -505,18 +467,6 @@ class _QuizScreenState extends State<QuizScreen> {
                               return Colors.black54;
                             }
 
-                            Color getSecondaryTextColor() {
-                              if (!isFeedbackShown) {
-                                return isSelected
-                                    ? Colors.white70
-                                    : Colors.black54;
-                              }
-                              if (isCorrectOption || isSelected) {
-                                return Colors.black54;
-                              }
-                              return Colors.black38;
-                            }
-
                             return GestureDetector(
                               onTap: isFeedbackShown
                                   ? null
@@ -589,21 +539,11 @@ class _QuizScreenState extends State<QuizScreen> {
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            option,
+                                            LanguageProvider.isEnglish() ? option : optionGuj,
                                             style: TextStyle(
                                               fontSize: 15,
                                               fontWeight: FontWeight.w500,
                                               color: getTextColor(),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            optionGuj,
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w400,
-                                              color:
-                                                  getSecondaryTextColor(),
                                             ),
                                           ),
                                         ],

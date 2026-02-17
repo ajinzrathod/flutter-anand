@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models.dart';
+import '../language_provider.dart';
 
 class ResultsScreen extends StatelessWidget {
   final QuizAttempt result;
@@ -20,11 +21,20 @@ class ResultsScreen extends StatelessWidget {
   String _getPerformanceMessage() {
     final percentage = result.percentage;
     final percentValue = double.parse(percentage);
-    if (percentValue >= 90) return 'Excellent!';
-    if (percentValue >= 80) return 'Great!';
-    if (percentValue >= 70) return 'Good!';
-    if (percentValue >= 60) return 'Fair';
-    return 'Need more practice';
+
+    if (LanguageProvider.isEnglish()) {
+      if (percentValue >= 90) return 'Excellent!';
+      if (percentValue >= 80) return 'Great!';
+      if (percentValue >= 70) return 'Good!';
+      if (percentValue >= 60) return 'Fair';
+      return 'Need more practice';
+    } else {
+      if (percentValue >= 90) return 'શ્રેષ્ઠ!';
+      if (percentValue >= 80) return 'શાનદાર!';
+      if (percentValue >= 70) return 'સારું!';
+      if (percentValue >= 60) return 'સરેરાશ';
+      return 'વધુ પ્રેક્ટિસ જરૂરી છે';
+    }
   }
 
   @override
@@ -53,9 +63,9 @@ class ResultsScreen extends StatelessWidget {
                       size: 60,
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      'Quiz Completed!',
-                      style: TextStyle(
+                    Text(
+                      LanguageProvider.isEnglish() ? 'Quiz Completed!' : 'ક્વિઝ પૂર્ણ!',
+                      style: const TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -135,25 +145,25 @@ class ResultsScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _buildDetailRow(
-                              'Shastra',
+                              LanguageProvider.isEnglish() ? 'Shastra' : 'શાસ્ત્ર',
                               result.shastraName,
                               Icons.book,
                             ),
                             const Divider(height: 24),
                             _buildDetailRow(
-                              'Set',
+                              LanguageProvider.isEnglish() ? 'Set' : 'સમૂહ',
                               result.setName,
                               Icons.layers,
                             ),
                             const Divider(height: 24),
                             _buildDetailRow(
-                              'Difficulty',
+                              LanguageProvider.isEnglish() ? 'Difficulty' : 'મુશ્કેલી',
                               _difficultyToString(result.difficulty),
                               Icons.speed,
                             ),
                             const Divider(height: 24),
                             _buildDetailRow(
-                              'Correct Answers',
+                              LanguageProvider.isEnglish() ? 'Correct Answers' : 'સાચા જવાબો',
                               '${result.correctAnswers}/${result.totalQuestions}',
                               Icons.check_circle,
                               color: Colors.green,
@@ -179,9 +189,9 @@ class ResultsScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Answer Review',
-                              style: TextStyle(
+                            Text(
+                              LanguageProvider.isEnglish() ? 'Answer Review' : 'જવાબોની તપાસ',
+                              style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black87,
@@ -345,13 +355,24 @@ class ResultsScreen extends StatelessWidget {
   }
 
   String _difficultyToString(DifficultyLevel level) {
-    switch (level) {
-      case DifficultyLevel.easy:
-        return 'Easy';
-      case DifficultyLevel.medium:
-        return 'Medium';
-      case DifficultyLevel.hard:
-        return 'Hard';
+    if (LanguageProvider.isEnglish()) {
+      switch (level) {
+        case DifficultyLevel.easy:
+          return 'Easy';
+        case DifficultyLevel.medium:
+          return 'Medium';
+        case DifficultyLevel.hard:
+          return 'Hard';
+      }
+    } else {
+      switch (level) {
+        case DifficultyLevel.easy:
+          return 'સહજ';
+        case DifficultyLevel.medium:
+          return 'મધ્યમ';
+        case DifficultyLevel.hard:
+          return 'મુશ્કેલ';
+      }
     }
   }
 }
