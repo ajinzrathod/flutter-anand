@@ -44,11 +44,30 @@ class SetSelectionScreen extends StatelessWidget {
         ),
         child: Column(
           children: [
-            // Header
+            // Header with Back Button
             Container(
               padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
               child: Column(
                 children: [
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 20),
                   Text(
                     shastra.nameEnglish,

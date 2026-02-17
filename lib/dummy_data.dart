@@ -18,7 +18,7 @@ class DummyDataProvider {
 
     try {
       final jsonString = await rootBundle
-          .loadString('quiz_questions_cleaned_flutter_safe.json');
+          .loadString('assets/quiz_questions_cleaned_flutter_safe.json');
       _quizData = jsonDecode(jsonString);
       _isInitialized = true;
     } catch (e) {
@@ -39,7 +39,7 @@ class DummyDataProvider {
         'descriptionEnglish': 'The letter of instruction for conduct',
         'descriptionGujarati': 'આચારની શિક્ષા આપતું પત્ર',
       },
-      'Satsangi Jivan': {
+      'Satsangijivan': {
         'nameEnglish': 'Satsangi Jivan',
         'nameGujarati': 'સત્સંગી જીવન',
         'descriptionEnglish': 'The life of a true devotee',
