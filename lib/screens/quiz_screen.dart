@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import '../models.dart';
 import '../language_provider.dart';
+import '../timer_settings.dart';
 
 class QuizScreen extends StatefulWidget {
   final QuestionSet set;
-  final DifficultyLevel difficulty;
+  final String difficulty;
   final String shastraName;
 
   const QuizScreen({
@@ -23,14 +25,171 @@ class _QuizScreenState extends State<QuizScreen> {
   late List<int?> selectedAnswers;
   int currentQuestionIndex = 0;
   late List<bool> feedbackShown;
+  late Timer _timer;
+  int _timeRemaining = 10; // 10 seconds per question for faster testing
+  late List<int> questionTimings; // Track time spent on each question
+  bool _timeIsUp = false; // Track if time is up for current question
 
   @override
   void initState() {
     super.initState();
-    // Randomize 10 questions from the selected difficulty set
-    questions = (widget.set.questions..shuffle()).take(10).toList();
+    // Get all available questions and shuffle them
+    final allQuestions = List<Question>.from(widget.set.questions);
+    allQuestions.shuffle();
+
+    // Take the first 10 unique questions (shuffle ensures no repetition)
+    questions = allQuestions.take(10).toList();
+
     selectedAnswers = List.filled(questions.length, null);
     feedbackShown = List.filled(questions.length, false);
+    questionTimings = List.filled(questions.length, 0);
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _timeRemaining = TimerSettingsProvider.getTimerSeconds();
+    _timeIsUp = false;
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(() {
+        if (_timeRemaining > 0) {
+          _timeRemaining--;
+        } else if (!_timeIsUp) {
+          _timeIsUp = true;
+          // Show "Time's Up" message and move to next question
+          _showTimeUpDialog();
+        }
+      });
+    });
+  }
+
+  void _showTimeUpDialog() {
+    _timer.cancel();
+    final question = questions[currentQuestionIndex];
+    final correctAnswerText = question.getCorrectAnswerText();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Colors.red[100]!, Colors.red[50]!],
+            ),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.schedule,
+                  color: Colors.red,
+                  size: 60,
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  LanguageProvider.isEnglish() ? "Time's Up!" : 'સમય સમાપ્ત!',
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                // Show correct answer
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.green,
+                      width: 2,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        LanguageProvider.isEnglish() ? 'Correct Answer' : 'સાચો જવાબ',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        correctAnswerText,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  LanguageProvider.isEnglish()
+                      ? 'Moving to the next question...'
+                      : 'આગલા પ્રશ્ને જતા રહ્યા છીએ...',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black54,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      if (currentQuestionIndex < questions.length - 1) {
+                        setState(() {
+                          currentQuestionIndex++;
+                        });
+                        _startTimer();
+                      } else {
+                        _submitQuiz();
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: Text(
+                      LanguageProvider.isEnglish() ? 'Next Question' : 'આગલો પ્રશ્ન',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
   }
 
   int _getCorrectAnswersCount() {
@@ -38,7 +197,8 @@ class _QuizScreenState extends State<QuizScreen> {
     for (int i = 0; i <= currentQuestionIndex; i++) {
       final question = questions[i];
       final selectedIndex = selectedAnswers[i];
-      if (selectedIndex != null && selectedIndex == question.correctOptionIndex) {
+      final correctIndex = question.getCorrectOptionIndex();
+      if (selectedIndex != null && selectedIndex == correctIndex) {
         count++;
       }
     }
@@ -47,13 +207,16 @@ class _QuizScreenState extends State<QuizScreen> {
 
   void _nextQuestion() {
     if (currentQuestionIndex < questions.length - 1) {
+      _timer.cancel();
       setState(() {
         currentQuestionIndex++;
       });
+      _startTimer();
     }
   }
 
   void _submitQuiz() {
+    _timer.cancel();
     // Calculate results
     int correctCount = 0;
     final answers = <QuestionAnswer>[];
@@ -61,16 +224,17 @@ class _QuizScreenState extends State<QuizScreen> {
     for (int i = 0; i < questions.length; i++) {
       final question = questions[i];
       final selectedIndex = selectedAnswers[i];
-      
+      final correctIndex = question.getCorrectOptionIndex();
+
       final isCorrect = selectedIndex != null && 
-          selectedIndex == question.correctOptionIndex;
+          selectedIndex == correctIndex;
 
       if (isCorrect) {
         correctCount++;
       }
 
       final selectedAnswer = selectedIndex != null 
-          ? question.options[selectedIndex]
+          ? question.options[selectedIndex].text
           : 'Not answered';
 
       answers.add(
@@ -99,17 +263,116 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
+  void _showQuitConfirmation(BuildContext context) {
+    _timer.cancel();
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Colors.red[100]!, Colors.red[50]!],
+            ),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.warning_rounded,
+                color: Colors.red,
+                size: 48,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                LanguageProvider.isEnglish()
+                    ? 'Quit Quiz?'
+                    : 'ક્વિઝ છોડી દો?',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                LanguageProvider.isEnglish()
+                    ? 'Your progress will be lost. Are you sure?'
+                    : 'તમારી પ્રગતિ ગુમ થશે. શું તમે ચોક્કસ છો?',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.black54,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      _startTimer(); // Resume the timer
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueAccent,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                    ),
+                    child: Text(
+                      LanguageProvider.isEnglish() ? 'Continue' : 'ચાલુ રાખો',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).pushNamedAndRemoveUntil(
+                        '/',
+                        (route) => false,
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                    ),
+                    child: Text(
+                      LanguageProvider.isEnglish() ? 'Quit' : 'બહાર નીકળો',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showAnswerFeedback() {
     final question = questions[currentQuestionIndex];
     final selectedIndex = selectedAnswers[currentQuestionIndex];
     
+    // Validate silently - just return without showing snackbar
     if (selectedIndex == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select an answer first!'),
-          backgroundColor: Colors.red,
-        ),
-      );
       return;
     }
 
@@ -117,9 +380,9 @@ class _QuizScreenState extends State<QuizScreen> {
       feedbackShown[currentQuestionIndex] = true;
     });
 
-    final isCorrect = selectedIndex == question.correctOptionIndex;
-    final correctAnswerText = question.options[question.correctOptionIndex];
-    final correctAnswerGuj = question.optionsGujarati[question.correctOptionIndex];
+    final correctIndex = question.getCorrectOptionIndex();
+    final isCorrect = selectedIndex == correctIndex;
+    final correctAnswerText = question.getCorrectAnswerText();
     final correctCount = _getCorrectAnswersCount();
 
     showDialog(
@@ -197,7 +460,7 @@ class _QuizScreenState extends State<QuizScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          LanguageProvider.isEnglish() ? 'Correct Answer (English)' : 'સાચો જવાબ (Gujarati)',
+                          LanguageProvider.isEnglish() ? 'Correct Answer' : 'સાચો જવાબ',
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
@@ -206,7 +469,7 @@ class _QuizScreenState extends State<QuizScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          LanguageProvider.isEnglish() ? correctAnswerText : correctAnswerGuj,
+                          correctAnswerText,
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -337,6 +600,39 @@ class _QuizScreenState extends State<QuizScreen> {
           ),
           centerTitle: true,
           automaticallyImplyLeading: false,
+          actions: [
+            // Timer display in AppBar
+            Container(
+              width: 50,
+              height: 50,
+              margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _timeRemaining > 10
+                    ? Colors.green
+                    : _timeRemaining > 5
+                        ? Colors.orange
+                        : Colors.red,
+              ),
+              child: Center(
+                child: Text(
+                  '${_timeRemaining}',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.exit_to_app),
+              onPressed: () {
+                _showQuitConfirmation(context);
+              },
+              tooltip: LanguageProvider.isEnglish() ? 'Quit' : 'બહાર નીકળો',
+            ),
+          ],
         ),
         body: Container(
           decoration: BoxDecoration(
@@ -381,7 +677,7 @@ class _QuizScreenState extends State<QuizScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                LanguageProvider.isEnglish() ? 'Question (English)' : 'પ્રશ્ન (Gujarati)',
+                                LanguageProvider.isEnglish() ? 'Question' : 'પ્રશ્ન',
                                 style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -390,7 +686,7 @@ class _QuizScreenState extends State<QuizScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                LanguageProvider.isEnglish() ? question.textEnglish : question.textGujarati,
+                                question.question,
                                 style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w600,
@@ -418,12 +714,11 @@ class _QuizScreenState extends State<QuizScreen> {
                             final isSelected =
                                 selectedAnswers[currentQuestionIndex] ==
                                     optionIndex;
-                            final isCorrectOption =
-                                optionIndex == question.correctOptionIndex;
+                            final correctIndex = question.getCorrectOptionIndex();
+                            final isCorrectOption = optionIndex == correctIndex;
                             final isFeedbackShown =
                                 feedbackShown[currentQuestionIndex];
                             final option = question.options[optionIndex];
-                            final optionGuj = question.optionsGujarati[optionIndex];
 
                             Color getBackgroundColor() {
                               if (!isFeedbackShown) {
@@ -468,7 +763,7 @@ class _QuizScreenState extends State<QuizScreen> {
                             }
 
                             return GestureDetector(
-                              onTap: isFeedbackShown
+                              onTap: (isFeedbackShown || _timeIsUp)
                                   ? null
                                   : () {
                                       setState(() {
@@ -539,7 +834,7 @@ class _QuizScreenState extends State<QuizScreen> {
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            LanguageProvider.isEnglish() ? option : optionGuj,
+                                            option.text,
                                             style: TextStyle(
                                               fontSize: 15,
                                               fontWeight: FontWeight.w500,
@@ -555,48 +850,37 @@ class _QuizScreenState extends State<QuizScreen> {
                             );
                           },
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              // Navigation buttons
-              Container(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    isLastQuestion
-                        ? ElevatedButton(
-                            onPressed: _showAnswerFeedback,
+                        const SizedBox(height: 32),
+                        // Navigation button - bigger and at top
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: selectedAnswers[currentQuestionIndex] == null || _timeIsUp ? null : _showAnswerFeedback,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
+                              backgroundColor: selectedAnswers[currentQuestionIndex] == null ? Colors.grey : (isLastQuestion ? Colors.green : Colors.blueAccent),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 32,
-                                vertical: 12,
+                                vertical: 18,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            child: const Text(
-                              'Submit Quiz',
-                              style: TextStyle(
+                            child: Text(
+                              isLastQuestion
+                                  ? 'Submit Quiz'
+                                  : 'Next Question',
+                              style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 16,
+                                fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                          )
-                        : ElevatedButton.icon(
-                            onPressed: _showAnswerFeedback,
-                            label: const Text('Next Question'),
-                            icon: const Icon(Icons.arrow_forward),
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 12,
-                              ),
-                            ),
                           ),
-                  ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ],

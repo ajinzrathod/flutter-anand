@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'models.dart';
 import 'language_provider.dart';
+import 'timer_settings.dart';
 import 'screens/language_selection_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/set_selection_screen.dart';
 import 'screens/quiz_screen.dart';
 import 'screens/results_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await TimerSettingsProvider.initialize();
   runApp(const MyApp());
 }
 
@@ -22,6 +25,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
         useMaterial3: true,
       ),
+      debugShowCheckedModeBanner: false,
       onGenerateRoute: (settings) {
         switch (settings.name) {
           case '/':
@@ -44,7 +48,7 @@ class MyApp extends StatelessWidget {
             return MaterialPageRoute(
               builder: (context) => QuizScreen(
                 set: args['set'] as QuestionSet,
-                difficulty: args['difficulty'] as DifficultyLevel,
+                difficulty: args['difficulty'] as String,
                 shastraName: args['shastraName'] as String,
               ),
               settings: const RouteSettings(name: '/quiz'),

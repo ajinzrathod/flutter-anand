@@ -59,67 +59,147 @@ class DummyDataProvider {
       },
     };
 
-    // Parse all questions organized by category and difficulty
-    final allQuestions = <String, Map<DifficultyLevel, List<Question>>>{};
+    // Parse all questions organized by category, language, and level
+    final allQuestions = <String, Map<String, Map<String, List<Question>>>>{};
     final questionsList = provider._quizData['questions'] as List<dynamic>;
 
     for (var i = 0; i < questionsList.length; i++) {
       final q = questionsList[i] as Map<String, dynamic>;
-      final question = _parseQuestion(i, q);
-      final category = q['category'] as String;
+      var category = q['category'] as String? ?? 'Unknown';
+      final level = q['level'] as String? ?? '1.0';
+      final language = q['language'] as String? ?? 'en';
+
+      // Normalize category name by removing ' eng' or ' guj' suffix
+      category = category.replaceAll(' eng', '').replaceAll(' guj', '');
 
       if (!allQuestions.containsKey(category)) {
         allQuestions[category] = {
-          DifficultyLevel.easy: [],
-          DifficultyLevel.medium: [],
-          DifficultyLevel.hard: [],
+          'en': {
+            '1.0': [],
+            '2.0': [],
+            '3.0': [],
+          },
+          'gu': {
+            '1.0': [],
+            '2.0': [],
+            '3.0': [],
+          },
         };
       }
-      allQuestions[category]![question.difficulty]!.add(question);
+
+      // Parse question with its actual language
+      final question = _parseQuestion(i, q, language);
+      allQuestions[category]![language]![level]!.add(question);
     }
 
-    // Create Shastra objects with separate sets for each difficulty level
+    // Create Shastra objects with separate sets for each language and difficulty
     final shastras = <Shastra>[];
-    shastraMetadata.forEach((categoryKey, metadata) {
-      final questionsByDifficulty = allQuestions[categoryKey] ?? {
-        DifficultyLevel.easy: [],
-        DifficultyLevel.medium: [],
-        DifficultyLevel.hard: [],
+    shastraMetadata.forEach((categoryKey, metadataMap) {
+      // Properly cast metadata values
+      final metadata = metadataMap as Map<String, dynamic>;
+
+      final questionsByLanguageAndLevel = allQuestions[categoryKey] ?? {
+        'en': {
+          '1.0': [],
+          '2.0': [],
+          '3.0': [],
+        },
+        'gu': {
+          '1.0': [],
+          '2.0': [],
+          '3.0': [],
+        },
       };
 
       final sets = <QuestionSet>[];
 
-      // Create a set for each difficulty level
-      final difficultyLabels = {
-        DifficultyLevel.easy: 'Easy',
-        DifficultyLevel.medium: 'Medium',
-        DifficultyLevel.hard: 'Hard',
+      // Create sets for English questions (Easy, Medium, Hard)
+      final englishQuestions = questionsByLanguageAndLevel['en'] ?? {
+        '1.0': [],
+        '2.0': [],
+        '3.0': [],
       };
 
-      questionsByDifficulty.forEach((difficulty, questions) {
-        if (questions.isNotEmpty) {
-          final difficultyLabel = difficultyLabels[difficulty]!;
-          final questionSet = QuestionSet(
-            id: '${categoryKey}_${difficultyLabel.toLowerCase()}',
-            nameEnglish: '${metadata['nameEnglish']} - $difficultyLabel',
-            nameGujarati: '${metadata['nameGujarati']} - $difficultyLabel',
-            descriptionEnglish:
-                '${metadata['descriptionEnglish']} ($difficultyLabel Questions)',
-            descriptionGujarati:
-                '${metadata['descriptionGujarati']} ($difficultyLabel પ્રશ્નો)',
-            questions: questions,
-          );
-          sets.add(questionSet);
-        }
-      });
+      if (englishQuestions['1.0']!.isNotEmpty) {
+        sets.add(QuestionSet(
+          id: '${categoryKey}_english_easy',
+          nameEnglish: (metadata['nameEnglish'] ?? '') as String,
+          nameGujarati: (metadata['nameGujarati'] ?? '') as String,
+          descriptionEnglish: '${metadata['descriptionEnglish'] ?? ''} - Easy',
+          descriptionGujarati: '${metadata['descriptionGujarati'] ?? ''} - સહજ',
+          questions: englishQuestions['1.0']!,
+        ));
+      }
+
+      if (englishQuestions['2.0']!.isNotEmpty) {
+        sets.add(QuestionSet(
+          id: '${categoryKey}_english_medium',
+          nameEnglish: (metadata['nameEnglish'] ?? '') as String,
+          nameGujarati: (metadata['nameGujarati'] ?? '') as String,
+          descriptionEnglish: '${metadata['descriptionEnglish'] ?? ''} - Medium',
+          descriptionGujarati: '${metadata['descriptionGujarati'] ?? ''} - મધ્યમ',
+          questions: englishQuestions['2.0']!,
+        ));
+      }
+
+      if (englishQuestions['3.0']!.isNotEmpty) {
+        sets.add(QuestionSet(
+          id: '${categoryKey}_english_hard',
+          nameEnglish: (metadata['nameEnglish'] ?? '') as String,
+          nameGujarati: (metadata['nameGujarati'] ?? '') as String,
+          descriptionEnglish: '${metadata['descriptionEnglish'] ?? ''} - Hard',
+          descriptionGujarati: '${metadata['descriptionGujarati'] ?? ''} - મુશ્કેલ',
+          questions: englishQuestions['3.0']!,
+        ));
+      }
+
+      // Create sets for Gujarati questions (Easy, Medium, Hard)
+      final gujaratiQuestions = questionsByLanguageAndLevel['gu'] ?? {
+        '1.0': [],
+        '2.0': [],
+        '3.0': [],
+      };
+
+      if (gujaratiQuestions['1.0']!.isNotEmpty) {
+        sets.add(QuestionSet(
+          id: '${categoryKey}_gujarati_easy',
+          nameEnglish: (metadata['nameEnglish'] ?? '') as String,
+          nameGujarati: (metadata['nameGujarati'] ?? '') as String,
+          descriptionEnglish: '${metadata['descriptionEnglish'] ?? ''} - Easy',
+          descriptionGujarati: '${metadata['descriptionGujarati'] ?? ''} - સહજ',
+          questions: gujaratiQuestions['1.0']!,
+        ));
+      }
+
+      if (gujaratiQuestions['2.0']!.isNotEmpty) {
+        sets.add(QuestionSet(
+          id: '${categoryKey}_gujarati_medium',
+          nameEnglish: (metadata['nameEnglish'] ?? '') as String,
+          nameGujarati: (metadata['nameGujarati'] ?? '') as String,
+          descriptionEnglish: '${metadata['descriptionEnglish'] ?? ''} - Medium',
+          descriptionGujarati: '${metadata['descriptionGujarati'] ?? ''} - મધ્યમ',
+          questions: gujaratiQuestions['2.0']!,
+        ));
+      }
+
+      if (gujaratiQuestions['3.0']!.isNotEmpty) {
+        sets.add(QuestionSet(
+          id: '${categoryKey}_gujarati_hard',
+          nameEnglish: (metadata['nameEnglish'] ?? '') as String,
+          nameGujarati: (metadata['nameGujarati'] ?? '') as String,
+          descriptionEnglish: '${metadata['descriptionEnglish'] ?? ''} - Hard',
+          descriptionGujarati: '${metadata['descriptionGujarati'] ?? ''} - મુશ્કેલ',
+          questions: gujaratiQuestions['3.0']!,
+        ));
+      }
 
       if (sets.isNotEmpty) {
         final shastra = Shastra(
           id: categoryKey,
-          nameEnglish: metadata['nameEnglish'] as String,
-          nameGujarati: metadata['nameGujarati'] as String,
-          descriptionEnglish: metadata['descriptionEnglish'] as String,
-          descriptionGujarati: metadata['descriptionGujarati'] as String,
+          nameEnglish: (metadata['nameEnglish'] ?? '') as String,
+          nameGujarati: (metadata['nameGujarati'] ?? '') as String,
+          descriptionEnglish: (metadata['descriptionEnglish'] ?? '') as String,
+          descriptionGujarati: (metadata['descriptionGujarati'] ?? '') as String,
           sets: sets,
         );
 
@@ -130,60 +210,37 @@ class DummyDataProvider {
     return shastras;
   }
 
-  static Question _parseQuestion(int index, Map<String, dynamic> json) {
-    final question = json['question'] as Map<String, dynamic>? ?? {};
-    final questionEnglish = question['en'] as String? ?? '';
-    final questionGujarati = question['gu'] as String? ?? '';
-
-    final options = json['options'] as List<dynamic>? ?? [];
-    final optionsEnglish = <String>[];
-    final optionsGujarati = <String>[];
-    final optionIds = <String>[];
-
-    for (var option in options) {
-      final opt = option as Map<String, dynamic>;
-      optionIds.add(opt['id'] as String? ?? '');
-      optionsEnglish.add(opt['en'] as String? ?? '');
-      optionsGujarati.add(opt['gu'] as String? ?? '');
-    }
-
-    final correctAnswerId = json['correctAnswer'] as String?;
-    int correctOptionIndex = 0;
-    String correctAnswerEnglish = '';
-    String correctAnswerGujarati = '';
-
-    if (correctAnswerId != null && correctAnswerId.isNotEmpty) {
-      final indexOfCorrect = optionIds.indexOf(correctAnswerId);
-      if (indexOfCorrect >= 0) {
-        correctOptionIndex = indexOfCorrect;
-        correctAnswerEnglish = optionsEnglish[indexOfCorrect];
-        correctAnswerGujarati = optionsGujarati[indexOfCorrect];
-      }
-    }
-
-    // Parse difficulty level
-    final level = json['level'] as String? ?? '1.0';
-    DifficultyLevel difficulty;
-    if (level.contains('1')) {
-      difficulty = DifficultyLevel.easy;
-    } else if (level.contains('2')) {
-      difficulty = DifficultyLevel.medium;
-    } else {
-      difficulty = DifficultyLevel.hard;
-    }
-
+  static Question _parseQuestion(int index, Map<String, dynamic> json, String language) {
     final id = json['id'] as String? ?? 'q_$index';
+    final category = json['category'] as String? ?? 'Unknown';
+    final level = json['level'] as String? ?? '1.0';
+
+    // Parse question - it's now a direct string
+    final questionText = json['question'] as String? ?? '';
+
+    // Parse options - each option has 'id' and 'text' keys
+    final optionsList = json['options'] as List<dynamic>? ?? [];
+    final options = <Option>[];
+
+    for (var option in optionsList) {
+      final opt = option as Map<String, dynamic>;
+      final optId = opt['id'] as String? ?? '';
+      // Handle text that might be String, int, or double
+      final optTextValue = opt['text'];
+      final optText = optTextValue?.toString() ?? '';
+      options.add(Option(id: optId, text: optText));
+    }
+
+    final correctAnswerId = json['correctAnswer'] as String? ?? 'A';
 
     return Question(
       id: id,
-      textEnglish: questionEnglish,
-      textGujarati: questionGujarati,
-      answerEnglish: correctAnswerEnglish,
-      answerGujarati: correctAnswerGujarati,
-      difficulty: difficulty,
-      options: optionsEnglish,
-      optionsGujarati: optionsGujarati,
-      correctOptionIndex: correctOptionIndex,
+      category: category,
+      language: language,
+      level: level,
+      question: questionText,
+      options: options,
+      correctAnswer: correctAnswerId,
     );
   }
 }

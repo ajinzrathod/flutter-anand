@@ -1,27 +1,46 @@
-enum DifficultyLevel { easy, medium, hard }
+class Option {
+  final String id;
+  final String text;
+
+  Option({
+    required this.id,
+    required this.text,
+  });
+}
 
 class Question {
   final String id;
-  final String textEnglish;
-  final String textGujarati;
-  final String answerEnglish;
-  final String answerGujarati;
-  final DifficultyLevel difficulty;
-  final List<String> options; // MCQ options in English
-  final List<String> optionsGujarati; // MCQ options in Gujarati
-  final int correctOptionIndex; // Index of correct answer in options
+  final String category;
+  final String language; // "en" or "gu"
+  final String level;
+  final String question;
+  final List<Option> options;
+  final String correctAnswer; // Option ID (A, B, C, D)
 
   Question({
     required this.id,
-    required this.textEnglish,
-    required this.textGujarati,
-    required this.answerEnglish,
-    required this.answerGujarati,
-    required this.difficulty,
+    required this.category,
+    required this.language,
+    required this.level,
+    required this.question,
     required this.options,
-    required this.optionsGujarati,
-    required this.correctOptionIndex,
+    required this.correctAnswer,
   });
+
+  // Get the correct answer text
+  String getCorrectAnswerText() {
+    final correctOpt = options.firstWhere(
+      (opt) => opt.id == correctAnswer,
+      orElse: () => Option(id: 'A', text: 'Unknown'),
+    );
+    return correctOpt.text;
+  }
+
+  // Get correct option index
+  int getCorrectOptionIndex() {
+    final index = options.indexWhere((opt) => opt.id == correctAnswer);
+    return index >= 0 ? index : 0;
+  }
 }
 
 class QuestionSet {
@@ -41,8 +60,8 @@ class QuestionSet {
     required this.questions,
   });
 
-  List<Question> getQuestionsByDifficulty(DifficultyLevel level) {
-    return questions.where((q) => q.difficulty == level).toList();
+  List<Question> getQuestionsByLanguage(String language) {
+    return questions.where((q) => q.language == language).toList();
   }
 }
 
@@ -71,7 +90,7 @@ class QuizAttempt {
   final int earnedPoints;
   final String shastraName;
   final String setName;
-  final DifficultyLevel difficulty;
+  final String difficulty; // Changed from DifficultyLevel to String
   final List<QuestionAnswer> answers;
 
   QuizAttempt({

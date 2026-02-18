@@ -342,7 +342,7 @@ class ResultsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Correct answer: ${answer.question.answerEnglish}',
+            'Correct answer: ${answer.question.getCorrectAnswerText()}',
             style: TextStyle(
               fontSize: 12,
               color: Colors.grey[700],
@@ -354,25 +354,13 @@ class ResultsScreen extends StatelessWidget {
     );
   }
 
-  String _difficultyToString(DifficultyLevel level) {
-    if (LanguageProvider.isEnglish()) {
-      switch (level) {
-        case DifficultyLevel.easy:
-          return 'Easy';
-        case DifficultyLevel.medium:
-          return 'Medium';
-        case DifficultyLevel.hard:
-          return 'Hard';
-      }
+  String _difficultyToString(String level) {
+    if (level.contains('1')) {
+      return LanguageProvider.isEnglish() ? 'Easy' : 'સહજ';
+    } else if (level.contains('2')) {
+      return LanguageProvider.isEnglish() ? 'Medium' : 'મધ્યમ';
     } else {
-      switch (level) {
-        case DifficultyLevel.easy:
-          return 'સહજ';
-        case DifficultyLevel.medium:
-          return 'મધ્યમ';
-        case DifficultyLevel.hard:
-          return 'મુશ્કેલ';
-      }
+      return LanguageProvider.isEnglish() ? 'Hard' : 'મુશ્કેલ';
     }
   }
 }

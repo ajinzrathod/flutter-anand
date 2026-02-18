@@ -10,25 +10,23 @@ class SetSelectionScreen extends StatelessWidget {
     required this.shastra,
   });
 
-  Color _getDifficultyColor(DifficultyLevel difficulty) {
-    switch (difficulty) {
-      case DifficultyLevel.easy:
-        return Colors.green;
-      case DifficultyLevel.medium:
-        return Colors.orange;
-      case DifficultyLevel.hard:
-        return Colors.red;
+  Color _getDifficultyColor(String level) {
+    if (level.contains('1')) {
+      return Colors.green;
+    } else if (level.contains('2')) {
+      return Colors.orange;
+    } else {
+      return Colors.red;
     }
   }
 
-  String _getDifficultyLabel(DifficultyLevel difficulty) {
-    switch (difficulty) {
-      case DifficultyLevel.easy:
-        return 'Easy';
-      case DifficultyLevel.medium:
-        return 'Medium';
-      case DifficultyLevel.hard:
-        return 'Hard';
+  String _getDifficultyLabel(String level) {
+    if (level.contains('1')) {
+      return 'Easy';
+    } else if (level.contains('2')) {
+      return 'Medium';
+    } else {
+      return 'Hard';
     }
   }
 
@@ -120,12 +118,12 @@ class SetSelectionScreen extends StatelessWidget {
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                itemCount: shastra.sets.length,
+                itemCount: _getFilteredSets().length,
                 itemBuilder: (context, index) {
-                  final set = shastra.sets[index];
+                  final set = _getFilteredSets()[index];
                   final difficulty = set.questions.isNotEmpty
-                      ? set.questions.first.difficulty
-                      : DifficultyLevel.easy;
+                      ? set.questions.first.level
+                      : '1.0';
                   final color = _getDifficultyColor(difficulty);
                   final difficultyLabel = _getDifficultyLabel(difficulty);
 
@@ -189,7 +187,7 @@ class SetSelectionScreen extends StatelessWidget {
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          'Level ${difficulty.index + 1}',
+                                          'Level ${_getLevelNumber(difficulty)}',
                                           style: TextStyle(
                                             fontSize: 14,
                                             color: Colors.black54,
@@ -249,14 +247,28 @@ class SetSelectionScreen extends StatelessWidget {
     );
   }
 
-  IconData _getDifficultyIcon(DifficultyLevel difficulty) {
-    switch (difficulty) {
-      case DifficultyLevel.easy:
-        return Icons.emoji_events;
-      case DifficultyLevel.medium:
-        return Icons.local_fire_department;
-      case DifficultyLevel.hard:
-        return Icons.flash_on;
+  int _getLevelNumber(String level) {
+    if (level.contains('1')) return 1;
+    if (level.contains('2')) return 2;
+    return 3;
+  }
+
+  IconData _getDifficultyIcon(String difficulty) {
+    if (difficulty.contains('1')) {
+      return Icons.emoji_events;
+    } else if (difficulty.contains('2')) {
+      return Icons.local_fire_department;
+    } else {
+      return Icons.flash_on;
     }
+  }
+
+  List<QuestionSet> _getFilteredSets() {
+    final isEnglish = LanguageProvider.isEnglish();
+    return shastra.sets
+        .where((set) =>
+            (isEnglish && set.id.contains('english')) ||
+            (!isEnglish && set.id.contains('gujarati')))
+        .toList();
   }
 }
